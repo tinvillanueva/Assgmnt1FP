@@ -112,7 +112,6 @@ public class DrawView extends View {
                     default:
 
                 }
-
                 break;
             case MotionEvent.ACTION_UP:
                 drawCanvas.drawPath(drawPath, drawPaint);
@@ -125,7 +124,6 @@ public class DrawView extends View {
         invalidate();
         return true;
     }
-
 
     //selecting shape from button menu
     public void setShape(String newShape){
@@ -159,8 +157,8 @@ public class DrawView extends View {
 
     //remembering the last selected color
     //used after the erase mode
-    public void setLastSelectedColor(int lastSelectedColor){
-        this.lastSelectedColor = lastSelectedColor;
+    public void setLastSelectedColor(int lastColor){
+        this.lastSelectedColor = lastColor;
     }
 
     public int getLastSelectedColor(){
@@ -176,7 +174,7 @@ public class DrawView extends View {
     public void setErase(boolean isErasing){
         erase = isErasing;
         if (erase) {
-            drawPaint.setColor(0xFFFFFFFF);
+            drawPaint.setAlpha(0xFFFFFFFF); //TODO not working. trying to make it white
             drawPaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.CLEAR));
         }
         else {
