@@ -17,7 +17,7 @@ import android.view.View;
 /**
  * Created by tinvillanueva on 14/03/15.
  */
-public class DrawView extends View {
+public class DrawView extends View  {
 
     /*****variable declaration*****/
     private Path drawPath;
@@ -36,6 +36,7 @@ public class DrawView extends View {
     private  float brushSize, lastBrushSize;
     private int lastSelectedColor;
 
+    private Triangle triangle;
 
 
     public DrawView(Context context, AttributeSet attrs) {
@@ -65,6 +66,9 @@ public class DrawView extends View {
         drawPaint.setStrokeJoin(Paint.Join.ROUND);
         drawPaint.setStrokeCap(Paint.Cap.ROUND);
 
+        //triangle
+        triangle = new Triangle();
+
 
     }
 
@@ -77,6 +81,8 @@ public class DrawView extends View {
         canvasBitmap = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888);
         drawCanvas = new Canvas(canvasBitmap);
     }
+
+
 
     @Override
     protected void onDraw(Canvas canvas) {
