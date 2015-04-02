@@ -6,14 +6,18 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
+import android.graphics.Point;
 import android.graphics.PointF;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffXfermode;
+import android.graphics.drawable.ShapeDrawable;
 import android.util.AttributeSet;
-import android.util.SparseArray;
+import android.util.Pair;
 import android.util.TypedValue;
 import android.view.MotionEvent;
 import android.view.View;
+
+import java.util.ArrayList;
 
 /**
  * Created by tinvillanueva on 14/03/15.
@@ -36,13 +40,20 @@ public class DrawView extends View {
     private boolean erase = false;
     private  float brushSize, lastBrushSize;
     private int lastSelectedColor;
-    private final int DELTA = 25;
 
     //multitouch
-    private SparseArray<PointF> activePointers;
+    int current_path_count = 1;
+    ArrayList<Path> pathList = new ArrayList<Path>();
+    ArrayList<Float> xList = new ArrayList<Float>();
+    ArrayList<Float> ylist = new ArrayList<Float>();
+    ArrayList<Integer> activePointerIdList = new ArrayList<Integer>();
+    ArrayList<Pair<Path, Paint>> arrayListPaths = new ArrayList<Pair<Path, Paint>>();
+
+    private static final float TOUCH_TOLERANCE = 4;
     private static final int INVALID_POINTER_ID = -1;
+    //active pointer is the one currently moving
     private int activePointerId = INVALID_POINTER_ID;
-    private boolean isMultitouch = false;
+
 
 
     public DrawView(Context context, AttributeSet attrs) {
@@ -72,8 +83,6 @@ public class DrawView extends View {
         drawPaint.setStrokeJoin(Paint.Join.ROUND);
         drawPaint.setStrokeCap(Paint.Cap.ROUND);
 
-        //multitouch
-        activePointers = new SparseArray<PointF>();
 
     }
 
@@ -92,8 +101,9 @@ public class DrawView extends View {
         super.onDraw(canvas);
         /* draw canvas and drawing path */
         canvas.drawBitmap(canvasBitmap, 0, 0,canvasPaint);
-        canvas.drawPath(drawPath, drawPaint);
-
+        for (int i=0; i<current_path_count; i++){
+            canvas.drawPath(pathList.get(i), drawPaint);
+        }
     }
 
     /* This method facilitates drawing activity.
@@ -105,89 +115,60 @@ public class DrawView extends View {
         //retrieves the X and Y positions of the user touch
         float touchX = event.getX();
         float touchY = event.getY();
-        int pointerIndex = event.getActionIndex();  //pointer index
-        int pointerId = event.getPointerId(pointerIndex);
-
+        //PointF pt = (touchX, touchY);
 
         switch (event.getAction() & MotionEvent.ACTION_MASK){
             case MotionEvent.ACTION_DOWN:
-                drawPath.moveTo(touchX, touchY);  //starts new line in the path
-                //save the id of this pointer
-                activePointerId = event.getPointerId(0);
+                current_path_count = 0;
+                activePointerIdList.add(event.getPointerId(0), current_path_count);
+                touch_start(touchX, touchY, current_path_count);
+                //drawPath.moveTo(touchX, touchX);
                 break;
 
-            //TODO
-            case MotionEvent.ACTION_POINTER_DOWN:{
-                //New point is assigned to the new touch.  Get action index
-                pointerIndex = event.getActionIndex();
-                pointerId = event.getPointerId(pointerIndex);
-                activePointerId = event.getPointerId(pointerId);
-                drawPath.moveTo(touchX, touchY);
-                break;
-            }
-
-            case MotionEvent.ACTION_MOVE:
-                //looping through all the pointers
-//                for (int i=0; i<event.getPointerCount(); i++){
-//                    PointF point = activePointers.get(event.getPointerId(i));
-//                    if (point != null){
-//                        point.x = event.getX(i);
-//                        point.y = event.getY(i);
-//                    }
-//
-//                }
-                //find the index of the active pointer and fetch its position
-                pointerIndex = event.findPointerIndex(activePointerId);
-                    //draws a line (case: circle, triangle, square) from the last point to this point
-                    switch (paintShape) {
-                        case "circle":
-                            drawPath.addCircle(event.getX(pointerIndex), event.getY(pointerIndex),
-                                    DELTA, Path.Direction.CW);
-                            break;
-                        case "square":
-                            drawPath.addRect(touchX - DELTA, touchY - DELTA, touchX + DELTA,
-                                        touchY + DELTA, Path.Direction.CW);
-                            break;
-                        default:
-                            //draw triangle
-                            Path triangle = new Path();
-                            triangle.moveTo(touchX, touchY);
-                            triangle.lineTo(touchX - DELTA, touchY - DELTA);
-                            triangle.lineTo(touchX + DELTA, touchY - DELTA);
-                            triangle.close();
-                            drawCanvas.drawPath(triangle, drawPaint);
-                            break;
-                   }
-
-                invalidate();
-                break;
-
-            case MotionEvent.ACTION_UP:
-                activePointerId = INVALID_POINTER_ID;
-                drawCanvas.drawPath(drawPath, drawPaint);
-                drawPath.reset();
-                break;
-
-            case MotionEvent.ACTION_POINTER_UP: {
-                //extract the index of the pointer that left the touch sensor
-                pointerIndex = (event.getAction() & MotionEvent.ACTION_POINTER_INDEX_MASK) >>
-                        MotionEvent.ACTION_POINTER_INDEX_SHIFT;
-                pointerId = event.getPointerId(pointerIndex);
-                if (pointerId == activePointerId){
-                    //This was our active pointer going up. Choose a new active pointer and
-                    //adjust accordingly
-                    final int newPointerIndex = pointerIndex == 0 ? 1 :0;
-                    touchX = event.getX(newPointerIndex);
-                    touchY = event.getY(newPointerIndex);
-                    activePointerId = event.getPointerId(newPointerIndex);
+            case MotionEvent.ACTION_POINTER_DOWN:
+                if (event.getPointerCount()>current_path_count){
+                    current_path_count++;
+                    touchX = event.getX(current_path_count);
+                    touchY = event.getY(current_path_count);
+                    activePointerIdList.add(event.getPointerId(current_path_count), current_path_count);
+                    touch_start(touchX, touchY, current_path_count);
                 }
+                break;
+            case MotionEvent.ACTION_MOVE:
+                for (int i=0; i<=current_path_count; i++){
+                    try {
+                        int pointerIndex = event.findPointerIndex(activePointerIdList.get(i));
+                        touchX = event.getX(pointerIndex);
+                        touchY = event.getY(pointerIndex);
+                        touch_move (touchX, touchY, i);
+                    }
+                    catch (Exception e){
+                        e.printStackTrace();
+                    }
+
+                }
+                //drawPath.lineTo(touchX, touchY);
+//                switch (paintShape) {
+//                    case "circle" :
+//                        drawPath.addCircle(touchX, touchY, 25, Path.Direction.CW);
+//                        break;
+//                    case "square" :
+//                        drawPath.addRect(touchX-25, touchY-25, touchX + 25, touchY + 25, Path.Direction.CW);
+//                        break;
+//                    default:
+//                        //draw triangle
+//                        Path triangle = new Path();
+//                        triangle.moveTo(touchX, touchY);
+//                        triangle.lineTo(touchX-25, touchY-25);
+//                        triangle.lineTo(touchX+25, touchY-25);
+//                        triangle.close();
+//                        drawCanvas.drawPath(triangle, drawPaint);
+//                        break;
+//                }
+                break;
+            case MotionEvent.ACTION_UP:
                 drawCanvas.drawPath(drawPath, drawPaint);
                 drawPath.reset();
-                break;
-            }
-
-            case MotionEvent.ACTION_CANCEL:
-                activePointerId = INVALID_POINTER_ID;
                 break;
             default:
                 return false;
@@ -196,6 +177,8 @@ public class DrawView extends View {
         invalidate();
         return true;
     }
+
+
 
     //selecting shape from button menu
     public void setShape(String newShape){
@@ -259,11 +242,31 @@ public class DrawView extends View {
         invalidate();
     }
 
-    //retrieves the pointer index
-    private int getIndex(MotionEvent event){
-        int index = (event.getAction() & MotionEvent.ACTION_POINTER_INDEX_MASK ) >>
-                MotionEvent.ACTION_POINTER_INDEX_SHIFT;
-        return index;
+    private void touch_start(float x, float y, int count){
+        drawPath = new Path();
+        pathList.add(count, drawPath);
+        pathList.get(count).reset();
+        pathList.get(count).moveTo(x,y);
+        xList.add(count,x);
+        ylist.add(count,y);
+
     }
 
+    private void touch_move(float x, float y, int count) {
+        float deltaX = Math.abs(x-xList.get(count));
+        float deltaY = Math.abs(y-ylist.get(count));
+        if (deltaX >=TOUCH_TOLERANCE || deltaY >=TOUCH_TOLERANCE){
+            pathList.get(count).quadTo(xList.get(count), ylist.get(count), (x + xList.get(count))/2,
+                    (y+ylist.get(count))/2);
+            try {
+                xList.remove(count);
+                ylist.remove(count);
+            }
+            catch (Exception e){
+                e.printStackTrace();
+            }
+            xList.add(count, x);
+            ylist.add(count, y);
+        }
+    }
 }
