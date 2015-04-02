@@ -12,6 +12,7 @@ import android.graphics.PorterDuff;
 import android.graphics.PorterDuffXfermode;
 import android.graphics.drawable.ShapeDrawable;
 import android.util.AttributeSet;
+import android.util.SparseArray;
 import android.util.TypedValue;
 import android.view.MotionEvent;
 import android.view.View;
@@ -37,7 +38,10 @@ public class DrawView extends View {
     private boolean erase = false;
     private  float brushSize, lastBrushSize;
     private int lastSelectedColor;
+    private final int DELTA = 25;
 
+    //multitouch
+    private SparseArray<PointF> activePointers;
 
 
     public DrawView(Context context, AttributeSet attrs) {
@@ -67,6 +71,8 @@ public class DrawView extends View {
         drawPaint.setStrokeJoin(Paint.Join.ROUND);
         drawPaint.setStrokeCap(Paint.Cap.ROUND);
 
+        //multitouch
+        activePointers = new SparseArray<PointF>();
 
     }
 
@@ -83,9 +89,17 @@ public class DrawView extends View {
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
-        /* draw canvas and drawing path */
-        canvas.drawBitmap(canvasBitmap, 0, 0,canvasPaint);
-        canvas.drawPath(drawPath, drawPaint);
+        for (int size = activePointers.size(), i = 0; i<size; i++){
+            PointF pointF = activePointers.valueAt(i);
+            if (pointF != null){
+
+                canvas.drawCircle(pointF.x, pointF.y,25, drawPaint);
+                /* draw canvas and drawing path */
+                //canvas.drawBitmap(canvasBitmap, 0, 0,canvasPaint);
+                //canvas.drawPath(drawPath, drawPaint);
+            }
+        }
+
     }
 
     /* This method facilitates drawing activity.
@@ -97,36 +111,58 @@ public class DrawView extends View {
         //retrieves the X and Y positions of the user touch
         float touchX = event.getX();
         float touchY = event.getY();
-        //PointF pt = (touchX, touchY);
+        int pointerIndex = event.getActionIndex();  //pointer index
+        int pointerId = event.getPointerId(pointerIndex);
 
-        switch (event.getAction()){
+        switch (event.getAction() & MotionEvent.ACTION_MASK){
             case MotionEvent.ACTION_DOWN:
                 drawPath.moveTo(touchX, touchX);
                 break;
+            case MotionEvent.ACTION_POINTER_DOWN:{
+                PointF f =new PointF();
+                f.x = event.getX(pointerIndex);
+                f.y = event.getY(pointerIndex);
+                activePointers.put(pointerId,f);
+                break;
+            }
+
             case MotionEvent.ACTION_MOVE:
-                //drawPath.lineTo(touchX, touchY);
-                switch (paintShape) {
-                    case "circle" :
-                        drawPath.addCircle(touchX, touchY, 25, Path.Direction.CW);
-                        break;
-                    case "square" :
-                        drawPath.addRect(touchX-25, touchY-25, touchX + 25, touchY + 25, Path.Direction.CW);
-                        break;
-                    default:
-                        //draw triangle
-                        Path triangle = new Path();
-                        triangle.moveTo(touchX, touchY);
-                        triangle.lineTo(touchX-25, touchY-25);
-                        triangle.lineTo(touchX+25, touchY-25);
-                        triangle.close();
-                        drawCanvas.drawPath(triangle, drawPaint);
-                        break;
+                for (int i = 0; i < event.getPointerCount(); i++){
+                    PointF pointer = activePointers.get(event.getPointerId(i));
+                    if (pointer != null){
+                        pointer.x = event.getX(i);
+                        pointer.y = event.getY(i);
+                        //drawPath.lineTo(touchX, touchY);
+                        switch (paintShape) {
+                            case "circle":
+                                drawPath.addCircle(touchX, touchY, DELTA, Path.Direction.CW);
+                                break;
+                            case "square":
+                                drawPath.addRect(touchX - DELTA, touchY - DELTA, touchX + DELTA,
+                                        touchY + DELTA, Path.Direction.CW);
+                                break;
+                            default:
+                                //draw triangle
+                                Path triangle = new Path();
+                                triangle.moveTo(touchX, touchY);
+                                triangle.lineTo(touchX - DELTA, touchY - DELTA);
+                                triangle.lineTo(touchX + DELTA, touchY - DELTA);
+                                triangle.close();
+                                drawCanvas.drawPath(triangle, drawPaint);
+                                break;
+                        }
+                    }
                 }
                 break;
+
             case MotionEvent.ACTION_UP:
                 drawCanvas.drawPath(drawPath, drawPaint);
                 drawPath.reset();
                 break;
+            case MotionEvent.ACTION_POINTER_UP: {
+
+
+            }
             default:
                 return false;
         }
@@ -197,5 +233,11 @@ public class DrawView extends View {
         invalidate();
     }
 
+    //retrieves the pointer index
+    private int getIndex(MotionEvent event){
+        int index = (event.getAction() & MotionEvent.ACTION_POINTER_INDEX_MASK ) >>
+                MotionEvent.ACTION_POINTER_INDEX_SHIFT;
+        return index;
+    }
 
 }
