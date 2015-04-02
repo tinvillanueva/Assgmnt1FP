@@ -6,6 +6,8 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
+import android.graphics.Point;
+import android.graphics.PointF;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffXfermode;
 import android.graphics.drawable.ShapeDrawable;
@@ -17,7 +19,7 @@ import android.view.View;
 /**
  * Created by tinvillanueva on 14/03/15.
  */
-public class DrawView extends View  {
+public class DrawView extends View {
 
     /*****variable declaration*****/
     private Path drawPath;
@@ -36,7 +38,6 @@ public class DrawView extends View  {
     private  float brushSize, lastBrushSize;
     private int lastSelectedColor;
 
-    private Triangle triangle;
 
 
     public DrawView(Context context, AttributeSet attrs) {
@@ -66,9 +67,6 @@ public class DrawView extends View  {
         drawPaint.setStrokeJoin(Paint.Join.ROUND);
         drawPaint.setStrokeCap(Paint.Cap.ROUND);
 
-        //triangle
-        triangle = new Triangle();
-
 
     }
 
@@ -81,8 +79,6 @@ public class DrawView extends View  {
         canvasBitmap = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888);
         drawCanvas = new Canvas(canvasBitmap);
     }
-
-
 
     @Override
     protected void onDraw(Canvas canvas) {
@@ -101,6 +97,7 @@ public class DrawView extends View  {
         //retrieves the X and Y positions of the user touch
         float touchX = event.getX();
         float touchY = event.getY();
+        //PointF pt = (touchX, touchY);
 
         switch (event.getAction()){
             case MotionEvent.ACTION_DOWN:
@@ -116,7 +113,14 @@ public class DrawView extends View  {
                         drawPath.addRect(touchX-25, touchY-25, touchX + 25, touchY + 25, Path.Direction.CW);
                         break;
                     default:
-
+                        //draw triangle
+                        Path triangle = new Path();
+                        triangle.moveTo(touchX, touchY);
+                        triangle.lineTo(touchX-25, touchY-25);
+                        triangle.lineTo(touchX+25, touchY-25);
+                        triangle.close();
+                        drawCanvas.drawPath(triangle, drawPaint);
+                        break;
                 }
                 break;
             case MotionEvent.ACTION_UP:
@@ -180,7 +184,7 @@ public class DrawView extends View  {
     public void setErase(boolean isErasing){
         erase = isErasing;
         if (erase) {
-            drawPaint.setAlpha(0xFFFFFFFF); //TODO not working. trying to make it white
+            //drawPaint.setColor(0xFFFFFFFF); //TODO not working. trying to make it white
             drawPaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.CLEAR));
         }
         else {
@@ -192,4 +196,6 @@ public class DrawView extends View  {
         drawCanvas.drawColor(0, PorterDuff.Mode.CLEAR);
         invalidate();
     }
+
+
 }
