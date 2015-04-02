@@ -6,9 +6,11 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
+import android.graphics.PointF;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffXfermode;
 import android.util.AttributeSet;
+import android.util.SparseArray;
 import android.util.TypedValue;
 import android.view.MotionEvent;
 import android.view.View;
@@ -37,7 +39,7 @@ public class DrawView extends View {
     private final int DELTA = 25;
 
     //multitouch
-    //private SparseArray<PointF> activePointers;
+    private SparseArray<PointF> activePointers;
     private static final int INVALID_POINTER_ID = -1;
     private int activePointerId = INVALID_POINTER_ID;
     private boolean isMultitouch = false;
@@ -71,7 +73,7 @@ public class DrawView extends View {
         drawPaint.setStrokeCap(Paint.Cap.ROUND);
 
         //multitouch
-        //activePointers = new SparseArray<PointF>();
+        activePointers = new SparseArray<PointF>();
 
     }
 
@@ -109,28 +111,38 @@ public class DrawView extends View {
 
         switch (event.getAction() & MotionEvent.ACTION_MASK){
             case MotionEvent.ACTION_DOWN:
-                drawPath.moveTo(touchX, touchY);
+                drawPath.moveTo(touchX, touchY);  //starts new line in the path
                 //save the id of this pointer
                 activePointerId = event.getPointerId(0);
                 break;
 
             //TODO
             case MotionEvent.ACTION_POINTER_DOWN:{
+                //New point is assigned to the new touch.  Get action index
                 pointerIndex = event.getActionIndex();
                 pointerId = event.getPointerId(pointerIndex);
-
-                drawPath.moveTo(touchX, touchY);
                 activePointerId = event.getPointerId(pointerId);
+                drawPath.moveTo(touchX, touchY);
                 break;
             }
 
             case MotionEvent.ACTION_MOVE:
+                //looping through all the pointers
+//                for (int i=0; i<event.getPointerCount(); i++){
+//                    PointF point = activePointers.get(event.getPointerId(i));
+//                    if (point != null){
+//                        point.x = event.getX(i);
+//                        point.y = event.getY(i);
+//                    }
+//
+//                }
                 //find the index of the active pointer and fetch its position
                 pointerIndex = event.findPointerIndex(activePointerId);
-                    //drawPath.lineTo(touchX, touchY);
+                    //draws a line (case: circle, triangle, square) from the last point to this point
                     switch (paintShape) {
                         case "circle":
-                            drawPath.addCircle(event.getX(pointerIndex), event.getY(pointerIndex), DELTA, Path.Direction.CW);
+                            drawPath.addCircle(event.getX(pointerIndex), event.getY(pointerIndex),
+                                    DELTA, Path.Direction.CW);
                             break;
                         case "square":
                             drawPath.addRect(touchX - DELTA, touchY - DELTA, touchX + DELTA,
