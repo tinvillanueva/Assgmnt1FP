@@ -1,5 +1,6 @@
 package tinvillanueva.fingerpaint;
 
+import android.app.Dialog;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
@@ -12,26 +13,25 @@ import android.graphics.PorterDuff;
 import android.graphics.PorterDuffXfermode;
 import android.graphics.drawable.ShapeDrawable;
 import android.util.AttributeSet;
-import android.util.Pair;
 import android.util.TypedValue;
 import android.view.MotionEvent;
 import android.view.View;
-
-import java.util.ArrayList;
+import android.widget.ImageButton;
 
 /**
  * Created by tinvillanueva on 14/03/15.
  */
 public class DrawView extends View {
 
+
     /*****variable declaration*****/
     private Path drawPath;
     private Paint drawPaint, canvasPaint;
+    public static final int DELTA = 25;
     /**The initial paint color corresponds to the first color in the palette
      * created in the palette section @ activity_main.xml,
      * which will be initially selected when the app launches.
      */
-
     private int paintColor = 0xFF000000;  //initial color
     private String paintShape = "triangle"; //initial shape
     private Canvas drawCanvas;
@@ -40,19 +40,6 @@ public class DrawView extends View {
     private boolean erase = false;
     private  float brushSize, lastBrushSize;
     private int lastSelectedColor;
-
-    //multitouch
-    int current_path_count = 1;
-    ArrayList<Path> pathList = new ArrayList<Path>();
-    ArrayList<Float> xList = new ArrayList<Float>();
-    ArrayList<Float> ylist = new ArrayList<Float>();
-    ArrayList<Integer> activePointerIdList = new ArrayList<Integer>();
-    ArrayList<Pair<Path, Paint>> arrayListPaths = new ArrayList<Pair<Path, Paint>>();
-
-    private static final float TOUCH_TOLERANCE = 4;
-    private static final int INVALID_POINTER_ID = -1;
-    //active pointer is the one currently moving
-    private int activePointerId = INVALID_POINTER_ID;
 
 
 
@@ -69,9 +56,7 @@ public class DrawView extends View {
         drawPath = new Path();
         drawPaint = new Paint();
         canvasPaint = new Paint(Paint.DITHER_FLAG);
-        //drawPaint.setShape();  ??
-        drawPaint.setColor(paintColor); //sets initial color
-
+        drawPaint.setColor(paintColor);
 
         /* setting the initial path */
         /** Setting the anti-alias, stroke join and cap styles
@@ -80,10 +65,8 @@ public class DrawView extends View {
         drawPaint.setAntiAlias(true);
         drawPaint.setStrokeWidth(brushSize);
         drawPaint.setStyle(Paint.Style.FILL_AND_STROKE);
-        drawPaint.setStrokeJoin(Paint.Join.ROUND);
+        drawPaint.setStrokeJoin(Paint.Join.MITER);
         drawPaint.setStrokeCap(Paint.Cap.ROUND);
-
-
     }
 
     /* for different drawing tool sizes */
@@ -101,9 +84,7 @@ public class DrawView extends View {
         super.onDraw(canvas);
         /* draw canvas and drawing path */
         canvas.drawBitmap(canvasBitmap, 0, 0,canvasPaint);
-        for (int i=0; i<current_path_count; i++){
-            canvas.drawPath(pathList.get(i), drawPaint);
-        }
+        canvas.drawPath(drawPath, drawPaint);
     }
 
     /* This method facilitates drawing activity.
@@ -115,56 +96,30 @@ public class DrawView extends View {
         //retrieves the X and Y positions of the user touch
         float touchX = event.getX();
         float touchY = event.getY();
-        //PointF pt = (touchX, touchY);
 
-        switch (event.getAction() & MotionEvent.ACTION_MASK){
+        switch (event.getAction()){
             case MotionEvent.ACTION_DOWN:
-                current_path_count = 0;
-                activePointerIdList.add(event.getPointerId(0), current_path_count);
-                touch_start(touchX, touchY, current_path_count);
-                //drawPath.moveTo(touchX, touchX);
-                break;
-
-            case MotionEvent.ACTION_POINTER_DOWN:
-                if (event.getPointerCount()>current_path_count){
-                    current_path_count++;
-                    touchX = event.getX(current_path_count);
-                    touchY = event.getY(current_path_count);
-                    activePointerIdList.add(event.getPointerId(current_path_count), current_path_count);
-                    touch_start(touchX, touchY, current_path_count);
-                }
+                drawPath.moveTo(touchX, touchX);
                 break;
             case MotionEvent.ACTION_MOVE:
-                for (int i=0; i<=current_path_count; i++){
-                    try {
-                        int pointerIndex = event.findPointerIndex(activePointerIdList.get(i));
-                        touchX = event.getX(pointerIndex);
-                        touchY = event.getY(pointerIndex);
-                        touch_move (touchX, touchY, i);
-                    }
-                    catch (Exception e){
-                        e.printStackTrace();
-                    }
-
-                }
                 //drawPath.lineTo(touchX, touchY);
-//                switch (paintShape) {
-//                    case "circle" :
-//                        drawPath.addCircle(touchX, touchY, 25, Path.Direction.CW);
-//                        break;
-//                    case "square" :
-//                        drawPath.addRect(touchX-25, touchY-25, touchX + 25, touchY + 25, Path.Direction.CW);
-//                        break;
-//                    default:
-//                        //draw triangle
-//                        Path triangle = new Path();
-//                        triangle.moveTo(touchX, touchY);
-//                        triangle.lineTo(touchX-25, touchY-25);
-//                        triangle.lineTo(touchX+25, touchY-25);
-//                        triangle.close();
-//                        drawCanvas.drawPath(triangle, drawPaint);
-//                        break;
-//                }
+                switch (paintShape) {
+                    case "circle" :
+                        drawPath.addCircle(touchX, touchY, DELTA, Path.Direction.CW);
+                        break;
+                    case "square" :
+                        drawPath.addRect(touchX-DELTA, touchY-DELTA, touchX + DELTA, touchY + DELTA, Path.Direction.CW);
+                        break;
+                    default:
+                        //draw triangle
+                        Path triangle = new Path();
+                        triangle.moveTo(touchX, touchY);
+                        triangle.lineTo(touchX+DELTA, touchY+DELTA);
+                        triangle.lineTo(touchX-DELTA, touchY+DELTA);
+                        triangle.close();
+                        drawCanvas.drawPath(triangle, drawPaint);
+                        break;
+                }
                 break;
             case MotionEvent.ACTION_UP:
                 drawCanvas.drawPath(drawPath, drawPaint);
@@ -178,8 +133,6 @@ public class DrawView extends View {
         return true;
     }
 
-
-
     //selecting shape from button menu
     public void setShape(String newShape){
         invalidate();
@@ -188,19 +141,17 @@ public class DrawView extends View {
 
     //selecting brush size
     public void setBrushSize(float newSize) {
-        float pixelAmount = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP,
-                newSize, getResources().getDisplayMetrics());
-        brushSize = pixelAmount;
+//        float pixelAmount = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP,
+//                newSize, getResources().getDisplayMetrics());
+        brushSize = newSize;
         drawPaint.setStrokeWidth(brushSize);
     }
 
-    public void setLastBrushSize(float lastBrushSize) {
-        this.lastBrushSize = lastBrushSize;
+    //gets & sets the last brush size
+    public void setLastBrushSize(float lastSize) {
+        lastBrushSize = lastSize;
     }
-
-    public float getLastBrushSize(){
-        return lastBrushSize;
-    }
+    public float getLastBrushSize(){return lastBrushSize;}
 
     //selecting color from color palette
     public void setColor(String newColor){
@@ -242,31 +193,7 @@ public class DrawView extends View {
         invalidate();
     }
 
-    private void touch_start(float x, float y, int count){
-        drawPath = new Path();
-        pathList.add(count, drawPath);
-        pathList.get(count).reset();
-        pathList.get(count).moveTo(x,y);
-        xList.add(count,x);
-        ylist.add(count,y);
 
-    }
 
-    private void touch_move(float x, float y, int count) {
-        float deltaX = Math.abs(x-xList.get(count));
-        float deltaY = Math.abs(y-ylist.get(count));
-        if (deltaX >=TOUCH_TOLERANCE || deltaY >=TOUCH_TOLERANCE){
-            pathList.get(count).quadTo(xList.get(count), ylist.get(count), (x + xList.get(count))/2,
-                    (y+ylist.get(count))/2);
-            try {
-                xList.remove(count);
-                ylist.remove(count);
-            }
-            catch (Exception e){
-                e.printStackTrace();
-            }
-            xList.add(count, x);
-            ylist.add(count, y);
-        }
-    }
+
 }
