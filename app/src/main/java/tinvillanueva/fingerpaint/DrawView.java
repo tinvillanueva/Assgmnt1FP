@@ -133,7 +133,7 @@ public class DrawView extends View {
         return true;
     }
 
-    //selecting shape from button menu
+    //selecting shape from button main_menu
     public void setShape(String newShape){
         invalidate();
         paintShape = newShape;

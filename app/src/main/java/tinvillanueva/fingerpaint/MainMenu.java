@@ -23,7 +23,8 @@ import android.widget.Toast;
 public class MainMenu extends Activity {
     private static  int RESULT_LOAD_IMAGE = 1;
     private final Context context = this;
-    String imageDecorableString;
+    String imagePath;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -34,7 +35,8 @@ public class MainMenu extends Activity {
             @Override
             public void onClick(View view) {
                 //GO TO MAIN ACTIVITY
-                //Intent mainActivityIntent = new Intent()
+                Intent mainActivityIntent = new Intent("tinvillanueva.fingerpaint.MainActivity");
+                startActivity(mainActivityIntent);
 
             }
         });
@@ -80,7 +82,7 @@ public class MainMenu extends Activity {
         super.onActivityResult(requestCode, resultCode, data);
         try {
             //when image is picked
-            if (requestCode == RESULT_LOAD_IMAGE && requestCode == RESULT_OK && null != data){
+            if (requestCode == RESULT_LOAD_IMAGE && resultCode == RESULT_OK && null != data){
                 //get the Image from data
                 Uri selectedImage = data.getData();
                 String[] filePathColumn = {MediaStore.Images.Media.DATA};
@@ -91,11 +93,11 @@ public class MainMenu extends Activity {
                 cursor.moveToFirst();
 
                 int columnIndex = cursor.getColumnIndex(filePathColumn[0]);
-                imageDecorableString = cursor.getString(columnIndex);
+                imagePath = cursor.getString(columnIndex);
                 cursor.close();
                 ImageView imageView = (ImageView) findViewById(R.id.drawingView);
                 //sets the image in the drawView after decoding the string
-                imageView.setImageBitmap(BitmapFactory.decodeFile(imageDecorableString));
+                imageView.setImageBitmap(BitmapFactory.decodeFile(imagePath));
             }
             else {
                 Toast.makeText(this, "You have not picked an image", Toast.LENGTH_LONG).show();
