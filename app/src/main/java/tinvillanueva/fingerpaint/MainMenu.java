@@ -2,16 +2,15 @@ package tinvillanueva.fingerpaint;
 
 import android.app.Activity;
 import android.app.AlertDialog;
-import android.app.Dialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.Cursor;
+import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
-import android.support.v7.app.ActionBarActivity;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
@@ -24,7 +23,7 @@ public class MainMenu extends Activity {
     private static  int RESULT_LOAD_IMAGE = 1;
     private final Context context = this;
     String imagePath;
-
+    private Bitmap selectedImage = null;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -80,14 +79,17 @@ public class MainMenu extends Activity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
+     
         try {
             //when image is picked
-            if (requestCode == RESULT_LOAD_IMAGE && resultCode == RESULT_OK && null != data){
+            if (requestCode == RESULT_LOAD_IMAGE && requestCode == RESULT_OK && null != data){
                 //get the Image from data
-                Uri selectedImage = data.getData();
+                Uri selectedImageUri = data.getData();
+                
+                //selecting image
                 String[] filePathColumn = {MediaStore.Images.Media.DATA};
                 //get the cursor
-                Cursor cursor = getContentResolver().query(selectedImage,
+                Cursor cursor = context.getContentResolver().query(selectedImageUri,
                         filePathColumn, null, null, null);
                 //move to first row
                 cursor.moveToFirst();
