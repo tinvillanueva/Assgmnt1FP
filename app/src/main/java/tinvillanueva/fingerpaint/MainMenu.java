@@ -97,6 +97,7 @@ public class MainMenu extends Activity {
                 int columnIndex = cursor.getColumnIndex(filePathColumn[0]);
                 imagePath = cursor.getString(columnIndex);
                 cursor.close();
+
                 ImageView imageView = (ImageView) findViewById(R.id.drawingView);
                 //sets the image in the drawView after decoding the string
                 imageView.setImageBitmap(BitmapFactory.decodeFile(imagePath));

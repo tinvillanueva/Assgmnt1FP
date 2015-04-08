@@ -17,6 +17,7 @@ import android.util.TypedValue;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.ImageButton;
+import android.widget.ImageView;
 
 /**
  * Created by tinvillanueva on 14/03/15.
