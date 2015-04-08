@@ -3,6 +3,7 @@ package tinvillanueva.fingerpaint;
 import android.app.Dialog;
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
@@ -18,6 +19,8 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+
+import java.io.File;
 
 /**
  * Created by tinvillanueva on 14/03/15.
@@ -41,11 +44,13 @@ public class DrawView extends View {
     private boolean erase = false;
     private  float brushSize, lastBrushSize;
     private int lastSelectedColor;
+    private String initialFile;
 
 
 
     public DrawView(Context context, AttributeSet attrs) {
         super(context, attrs);
+        initialFile = null;
         setupDrawing();
     }
 
@@ -78,6 +83,9 @@ public class DrawView extends View {
         //instantiate bitmap using width and height values
         canvasBitmap = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888);
         drawCanvas = new Canvas(canvasBitmap);
+        if (initialFile != null) {
+            loadImageFromFile(initialFile);
+        }
     }
 
     @Override
@@ -109,7 +117,8 @@ public class DrawView extends View {
                         drawPath.addCircle(touchX, touchY, DELTA, Path.Direction.CW);
                         break;
                     case "square" :
-                        drawPath.addRect(touchX-DELTA, touchY-DELTA, touchX + DELTA, touchY + DELTA, Path.Direction.CW);
+                        drawPath.addRect(touchX-DELTA, touchY-DELTA, touchX + DELTA,
+                                touchY + DELTA, Path.Direction.CW);
                         break;
                     default:
                         //draw triangle
@@ -194,7 +203,19 @@ public class DrawView extends View {
         invalidate();
     }
 
+    public void setImageFile(String filePath) {
+        this.initialFile = filePath;
+    }
 
+    private void loadImageFromFile(String filePath) {
+        File image = new File(filePath);
+        BitmapFactory.Options bmOptions = new BitmapFactory.Options();
+        Bitmap bitmap = BitmapFactory.decodeFile(image.getAbsolutePath(),bmOptions);
+        bitmap = Bitmap.createScaledBitmap(bitmap,this.getWidth(),this.getHeight(),true);
+
+        drawCanvas.drawBitmap(bitmap,0,0,canvasPaint);
+
+    }
 
 
 }

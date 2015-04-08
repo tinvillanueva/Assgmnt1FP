@@ -20,10 +20,8 @@ import android.widget.Toast;
  * Created by tinvillanueva on 5/04/15.
  */
 public class MainMenu extends Activity {
-    private static  int RESULT_LOAD_IMAGE = 1;
+    private static int RESULT_LOAD_IMAGE = 1;
     private final Context context = this;
-    String imagePath;
-    private Bitmap selectedImage = null;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -79,10 +77,8 @@ public class MainMenu extends Activity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-     
-        try {
-            //when image is picked
-            if (requestCode == RESULT_LOAD_IMAGE && requestCode == RESULT_OK && null != data){
+
+            if (requestCode == RESULT_LOAD_IMAGE && resultCode == RESULT_OK && null != data){
                 //get the Image from data
                 Uri selectedImageUri = data.getData();
                 
@@ -95,20 +91,21 @@ public class MainMenu extends Activity {
                 cursor.moveToFirst();
 
                 int columnIndex = cursor.getColumnIndex(filePathColumn[0]);
-                imagePath = cursor.getString(columnIndex);
+                String imagePath = cursor.getString(columnIndex);
                 cursor.close();
 
-                ImageView imageView = (ImageView) findViewById(R.id.drawingView);
-                //sets the image in the drawView after decoding the string
-                imageView.setImageBitmap(BitmapFactory.decodeFile(imagePath));
+                Intent intent = new Intent(this, MainActivity.class);
+                Bundle bundle = new Bundle();
+                bundle.putString("image", imagePath);
+                intent.putExtras(bundle);
+                startActivity(intent);
+
+//                ImageView imageView = (ImageView) findViewById(R.id.drawingView);
+//                //sets the image in the drawView after decoding the string
+//                imageView.setImageBitmap(BitmapFactory.decodeFile(imagePath));
             }
             else {
                 Toast.makeText(this, "You have not picked an image", Toast.LENGTH_LONG).show();
             }
-        }
-        catch (Exception e){
-            Toast.makeText(this, "Something went wrong, try selecting other image",
-                    Toast.LENGTH_LONG).show();
-        }
     }
 }

@@ -10,9 +10,9 @@
         android:layout_width="150dp"
         android:layout_height="wrap_content"
         android:text="New"
-        android:layout_alignParentTop="true"
-        android:layout_centerHorizontal="true"
-        android:layout_marginTop="177dp" />
+        android:layout_centerVertical="true"
+        android:layout_alignLeft="@+id/btnMenuGallery"
+        android:layout_alignStart="@+id/btnMenuGallery" />
 
     <Button
         android:id="@+id/btnMenuGallery"
