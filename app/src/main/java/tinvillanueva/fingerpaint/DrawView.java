@@ -151,8 +151,6 @@ public class DrawView extends View {
 
     //selecting brush size
     public void setBrushSize(float newSize) {
-//        float pixelAmount = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP,
-//                newSize, getResources().getDisplayMetrics());
         brushSize = newSize;
         drawPaint.setStrokeWidth(brushSize);
     }
